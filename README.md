@@ -17,7 +17,7 @@ Currently working on manjaro linux
 1.  Install dependencies:
     
     ```bash
-    sudo pacman gcc cmake vim zsh lua nodejs npm python jdk go
+    sudo pacman -S gcc cmake vim zsh lua nodejs npm python jdk go
     pamac build ncurses5-compat-libs
     ```
 
