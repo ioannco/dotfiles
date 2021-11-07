@@ -27,6 +27,7 @@ Plugin 'bling/vim-airline'
 Plugin 'jeaye/color_coded'
 Plugin 'morhetz/gruvbox'
 Plugin 'tikhomirov/vim-glsl'
+Plugin 'cpiger/NeoDebug'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -48,3 +49,8 @@ colorscheme gruvbox
 set background=dark
 let g:gruvbox_contrast_light = 'soft'
 set number
+set smartindent
+set backspace=indent,start,eol
+set tabstop=4
+set shiftwidth=4
+set expandtab
