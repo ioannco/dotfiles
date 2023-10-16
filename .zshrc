@@ -24,3 +24,11 @@ HISTFILE=~/.histfile
 HISTSIZE=5000
 SAVEHIST=5000
 setopt appendhistory
+
+# Playbook servers
+export PBOOK="tttttv@62.84.118.45"
+alias pb="ssh $PBOOK"
+
+# OSCOURSE
+export ISP_PATH="/Users/ioannco/KERNEL/ispras-gcc/bin:/Users/ioannco/KERNEL/ispras-gdb/bin:/Users/ioannco/KERNEL/ispras-qemu/bin:/Users/ioannco/KERNEL/ispras-llvm/bin"
+
