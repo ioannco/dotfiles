@@ -22,10 +22,9 @@ repo_dir = Path().absolute()
 home_dir = Path.home()
 p10k_dir = home_dir / 'powerlevel10k'
 
-# clone p10k repo
-if p10k_dir.exists():
-    sh.rmtree(p10k_dir)
-os.system('git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/powerlevel10k')
+# clone repos 
+os.system('curl -L https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh | sh')
+os.system('git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions')
 
 # backup old dotfiles
 mvsafe(home_dir / '.zshrc', home_dir / '.zshrc.save')
