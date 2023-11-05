@@ -20,10 +20,10 @@ def mvsafe(src: Path, dst: Path):
     except FileNotFoundError:
         log(f'{src} not found, skipping')
 
-def include(fetaure: str, options: list[str]):
+def include(fetaure, options):
     return fetaure in options or 'all' in options
 
-def install(options: list[str]):
+def install(options):
     # init paths
     repo_dir = Path().absolute()
     home_dir = Path.home()
