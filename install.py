@@ -7,6 +7,7 @@ from pathlib import Path
 import argparse
 import platform
 import subprocess
+import sys  # Добавлен импорт sys
 
 # log func
 def log(msg):
