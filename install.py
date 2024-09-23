@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 
 # imports 
-import sys
 import os
 import shutil as sh
 from pathlib import Path
-import shutil
-
-args = sys.argv
+import argparse
+import platform
+import subprocess
 
 # log func
-def log(str):
-    print(str, file=sys.stderr)
+def log(msg):
+    print(msg, file=sys.stderr)
 
 # move func
 def mvsafe(src: Path, dst: Path):
@@ -20,17 +19,35 @@ def mvsafe(src: Path, dst: Path):
     except FileNotFoundError:
         log(f'{src} not found, skipping')
 
-def include(fetaure, options):
-    return fetaure in options or 'all' in options
+def include(feature, options):
+    return feature in options or 'all' in options
 
-def install(options):
+def write_to_config(config_path, content):
+    with open(config_path, 'a+') as config_file:
+        config_file.write(content)
+
+def install_shell(install_shell_flag):
+    if install_shell_flag:
+        system = platform.system()
+        if system == 'Linux':
+            log("Installing zsh using apt...")
+            subprocess.run(['sudo', 'apt', 'install', '-y', 'zsh'], check=True)
+        elif system == 'Darwin':  # macOS
+            log("Installing zsh using brew...")
+            brew_path = '/opt/homebrew/bin/brew'  # Путь к brew
+            subprocess.run([brew_path, 'install', 'zsh'], check=True)
+        else:
+            log("Unsupported OS for shell installation.")
+    else:
+        log("Shell installation skipped.")
+
+def install(options, shell, install_shell_flag):
     # init paths
     repo_dir = Path().absolute()
     home_dir = Path.home()
-    p10k_dir = home_dir / 'powerlevel10k'
 
-    if os.path.exists(home_dir/'.oh-my-zsh'):
-        mvsafe(home_dir/'.oh-my-zsh', home_dir/'.oh-my-zsh.save')
+    if os.path.exists(home_dir / '.oh-my-zsh'):
+        mvsafe(home_dir / '.oh-my-zsh', home_dir / '.oh-my-zsh.save')
 
     # clone repos 
     os.system('curl -L https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh | sh')
@@ -42,38 +59,36 @@ def install(options):
     mvsafe(home_dir / '.p10k.zsh', home_dir / '.p10k.zsh')
 
     # copy new dotfiles
-    sh.copy(repo_dir / '.zshrc', home_dir / '.zshrc')
-    sh.copy(repo_dir / '.p10k.zsh', home_dir / '.p10k.zsh')
+    if shell == 'zsh':
+        sh.copy(repo_dir / '.zshrc', home_dir / '.zshrc')
+        sh.copy(repo_dir / '.p10k.zsh', home_dir / '.p10k.zsh')
+        config_path = home_dir / '.zshrc'
+    elif shell == 'fish':
+        config_dir = home_dir / '.config' / 'fish'
+        config_dir.mkdir(parents=True, exist_ok=True)
+        sh.copy(repo_dir / 'config.fish', config_dir / 'config.fish')
+        config_path = config_dir / 'config.fish'
 
     # optional features
-    # crm aliases
-    if include('crm-aliases', options):
-        print("Crm-aliases")
-        sh.copy(repo_dir / '.crm_aliases', home_dir / '.crm_aliases')
-        with open(home_dir / '.zshrc', 'a+') as zshrc:
-            zshrc.write("# CRM aliases (optional)\n")
-            zshrc.write("source ~/.crm_aliases\n")
-            zshrc.write("\n")
-        
-    # brew
     if include('brew', options):
         print("Brew")
         os.system('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"')
-        with open(home_dir / '.zshrc', 'a+') as zshrc:
-            zshrc.write("# Brew (optional)\n")
-            zshrc.write("eval $(/opt/homebrew/bin/brew shellenv)\n")
-            zshrc.write("\n")
+        brew_content = "# Brew (optional)\n"
+        if shell == 'zsh':
+            brew_content += "eval $(/opt/homebrew/bin/brew shellenv)\n\n"
+        elif shell == 'fish':
+            brew_content += "status --is-interactive; and eval (/opt/homebrew/bin/brew shellenv)\n\n"
+        write_to_config(config_path, brew_content)
 
-    # vscode
     if include('code', options):
         print("VSCode alias")
-        with open(home_dir / '.zshrc', 'a+') as zshrc:
-            zshrc.write("# VSCode(optional)\n")
-            zshrc.write("export vscode='Visual Studio Code'\n")
-            zshrc.write("alias code='open -a $vscode'\n")
-            zshrc.write("\n")
+        code_content = "# VSCode (optional)\n"
+        code_content += "export vscode='Visual Studio Code'\n"
+        code_content += "alias code='open -a $vscode'\n\n"
+        write_to_config(config_path, code_content)
 
     print('Success!')
+    install_shell(install_shell_flag)
 
 def clean():
     home_dir = Path.home()
@@ -85,30 +100,29 @@ def clean():
         os.remove(home_dir / '.crm_aliases')
 
     if os.path.exists(home_dir / '.oh-my-zsh'):
-        shutil.rmtree(home_dir / '.oh-my-zsh')
+        sh.rmtree(home_dir / '.oh-my-zsh')
 
-def print_help():
-    print()
-    print("ioannco dotfiles installation manager")
-    print()
-    print("-h --help          print help")
-    print("install [options]  install dotfiles with certain options")
-    print("clean              remove old dotfiles")
-    print()
-    print("options: ")
-    print("    brew           include brew into the installation")
-    print("    crm-aliases    include ControlGps crm aliases")
-    print("    code           include MacOS vscode open alias")
-    print("    all            install all options")
+def main():
+    parser = argparse.ArgumentParser(description="Ioannco dotfiles installation manager")
+    subparsers = parser.add_subparsers(dest='command')
 
-if __name__ == '__main__':
-    args = sys.argv
-    if '-h' in args or '--help' in args:
-        print_help()
-    elif 'install' in args:
-        args.remove('install')
-        install(args)
-    elif 'clean' in args:
+    # install command
+    install_parser = subparsers.add_parser('install', help='install dotfiles with certain options')
+    install_parser.add_argument('options', nargs='*', choices=['brew', 'code', 'all'], help='options for installation')
+    install_parser.add_argument('--shell', choices=['zsh', 'fish'], required=True, help='choose shell for configuration')
+    install_parser.add_argument('--install-shell', action='store_true', help='install zsh if not present')
+
+    # clean command
+    subparsers.add_parser('clean', help='remove old dotfiles')
+
+    args = parser.parse_args()
+
+    if args.command == 'install':
+        install(args.options, args.shell, args.install_shell)
+    elif args.command == 'clean':
         clean()
     else:
-        print_help()
+        parser.print_help()
+
+if __name__ == '__main__':
+    main()
