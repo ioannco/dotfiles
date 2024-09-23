@@ -30,15 +30,22 @@ def install_shell(install_shell_flag, shell):
     if install_shell_flag:
         system = platform.system()
         if system == 'Linux':
-            distro = subprocess.run(['lsb_release', '-is'], capture_output=True, text=True).stdout.strip()
-            if distro == 'Ubuntu':
-                log(f"Installing {shell} using apt...")
-                subprocess.run(['sudo', 'apt', 'install', '-y', shell], check=True)
-            elif distro == 'Arch':
-                log(f"Installing {shell} using pacman...")
-                subprocess.run(['sudo', 'pacman', '-S', '--noconfirm', shell], check=True)
-            else:
-                log("Unsupported Linux distribution for shell installation.")
+            try:
+                with open('/etc/os-release') as f:
+                    for line in f:
+                        if line.startswith('ID='):
+                            distro = line.strip().split('=')[1].replace('"', '')
+                            break
+                if distro == 'ubuntu':
+                    log(f"Installing {shell} using apt...")
+                    subprocess.run(['sudo', 'apt', 'install', '-y', shell], check=True)
+                elif distro == 'arch':
+                    log(f"Installing {shell} using pacman...")
+                    subprocess.run(['sudo', 'pacman', '-S', '--noconfirm', shell], check=True)
+                else:
+                    log("Unsupported Linux distribution for shell installation.")
+            except FileNotFoundError:
+                log("Unable to determine Linux distribution.")
         elif system == 'Darwin':  # macOS
             log(f"Installing {shell} using brew...")
             brew_path = '/opt/homebrew/bin/brew'  # Путь к brew
@@ -47,6 +54,7 @@ def install_shell(install_shell_flag, shell):
             log("Unsupported OS for shell installation.")
     else:
         log("Shell installation skipped.")
+
 
 def install(options, shell, install_shell_flag):
     # init paths
