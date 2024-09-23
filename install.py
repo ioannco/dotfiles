@@ -30,8 +30,15 @@ def install_shell(install_shell_flag):
     if install_shell_flag:
         system = platform.system()
         if system == 'Linux':
-            log("Installing zsh using apt...")
-            subprocess.run(['sudo', 'apt', 'install', '-y', 'zsh'], check=True)
+            distro = subprocess.run(['lsb_release', '-is'], capture_output=True, text=True).stdout.strip()
+            if distro == 'Ubuntu':
+                log("Installing zsh using apt...")
+                subprocess.run(['sudo', 'apt', 'install', '-y', 'zsh'], check=True)
+            elif distro == 'Arch':
+                log("Installing zsh using pacman...")
+                subprocess.run(['sudo', 'pacman', '-S', '--noconfirm', 'zsh'], check=True)
+            else:
+                log("Unsupported Linux distribution for shell installation.")
         elif system == 'Darwin':  # macOS
             log("Installing zsh using brew...")
             brew_path = '/opt/homebrew/bin/brew'  # Путь к brew
