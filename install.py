@@ -55,34 +55,48 @@ def install_shell(install_shell_flag, shell):
     else:
         log("Shell installation skipped.")
 
-
 def install(options, shell, install_shell_flag):
     # init paths
     repo_dir = Path().absolute()
     home_dir = Path.home()
 
-    if os.path.exists(home_dir / '.oh-my-zsh'):
-        mvsafe(home_dir / '.oh-my-zsh', home_dir / '.oh-my-zsh.save')
+    # Install the shell if requested
+    install_shell(install_shell_flag, shell)
 
-    # clone repos 
-    os.system('curl -L https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh | sh')
-    os.system('git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions')
-    os.system('git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting')
-
-    # backup old dotfiles
-    mvsafe(home_dir / '.zshrc', home_dir / '.zshrc.save')
-    mvsafe(home_dir / '.p10k.zsh', home_dir / '.p10k.zsh')
-
-    # copy new dotfiles
+    # Only clone oh-my-zsh if the selected shell is zsh
     if shell == 'zsh':
+        if os.path.exists(home_dir / '.oh-my-zsh'):
+            mvsafe(home_dir / '.oh-my-zsh', home_dir / '.oh-my-zsh.save')
+
+        # clone oh-my-zsh
+        os.system('sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"')
+
+        # clone plugins
+        os.system('git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions')
+        os.system('git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting')
+
+        # backup old dotfiles
+        mvsafe(home_dir / '.zshrc', home_dir / '.zshrc.save')
+        mvsafe(home_dir / '.p10k.zsh', home_dir / '.p10k.zsh')
+
+        # copy new dotfiles
         sh.copy(repo_dir / '.zshrc', home_dir / '.zshrc')
         sh.copy(repo_dir / '.p10k.zsh', home_dir / '.p10k.zsh')
         config_path = home_dir / '.zshrc'
+        
+        # Warning to change shell
+        log("Please change your default shell to zsh using the command:")
+        log("chsh -s $(which zsh)")
+
     elif shell == 'fish':
         config_dir = home_dir / '.config' / 'fish'
         config_dir.mkdir(parents=True, exist_ok=True)
         sh.copy(repo_dir / 'config.fish', config_dir / 'config.fish')
         config_path = config_dir / 'config.fish'
+        
+        # Warning to change shell
+        log("Please change your default shell to fish using the command:")
+        log("chsh -s $(which fish)")
 
     # optional features
     if include('brew', options):
@@ -103,7 +117,6 @@ def install(options, shell, install_shell_flag):
         write_to_config(config_path, code_content)
 
     print('Success!')
-    install_shell(install_shell_flag, shell)
 
 def clean():
     home_dir = Path.home()
