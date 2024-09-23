@@ -26,23 +26,23 @@ def write_to_config(config_path, content):
     with open(config_path, 'a+') as config_file:
         config_file.write(content)
 
-def install_shell(install_shell_flag):
+def install_shell(install_shell_flag, shell):
     if install_shell_flag:
         system = platform.system()
         if system == 'Linux':
             distro = subprocess.run(['lsb_release', '-is'], capture_output=True, text=True).stdout.strip()
             if distro == 'Ubuntu':
-                log("Installing zsh using apt...")
-                subprocess.run(['sudo', 'apt', 'install', '-y', 'zsh'], check=True)
+                log(f"Installing {shell} using apt...")
+                subprocess.run(['sudo', 'apt', 'install', '-y', shell], check=True)
             elif distro == 'Arch':
-                log("Installing zsh using pacman...")
-                subprocess.run(['sudo', 'pacman', '-S', '--noconfirm', 'zsh'], check=True)
+                log(f"Installing {shell} using pacman...")
+                subprocess.run(['sudo', 'pacman', '-S', '--noconfirm', shell], check=True)
             else:
                 log("Unsupported Linux distribution for shell installation.")
         elif system == 'Darwin':  # macOS
-            log("Installing zsh using brew...")
+            log(f"Installing {shell} using brew...")
             brew_path = '/opt/homebrew/bin/brew'  # Путь к brew
-            subprocess.run([brew_path, 'install', 'zsh'], check=True)
+            subprocess.run([brew_path, 'install', shell], check=True)
         else:
             log("Unsupported OS for shell installation.")
     else:
@@ -95,7 +95,7 @@ def install(options, shell, install_shell_flag):
         write_to_config(config_path, code_content)
 
     print('Success!')
-    install_shell(install_shell_flag)
+    install_shell(install_shell_flag, shell)
 
 def clean():
     home_dir = Path.home()
@@ -117,7 +117,7 @@ def main():
     install_parser = subparsers.add_parser('install', help='install dotfiles with certain options')
     install_parser.add_argument('options', nargs='*', choices=['brew', 'code', 'all'], help='options for installation')
     install_parser.add_argument('--shell', choices=['zsh', 'fish'], required=True, help='choose shell for configuration')
-    install_parser.add_argument('--install-shell', action='store_true', help='install zsh if not present')
+    install_parser.add_argument('--install-shell', action='store_true', help='install shell if not present')
 
     # clean command
     subparsers.add_parser('clean', help='remove old dotfiles')
