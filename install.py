@@ -33,6 +33,8 @@ def feature_supported(feature, system):
         return system == 'Darwin'
     if feature == 'nvim':
         return True
+    if feature == 'tmux':
+        return True
     return False
 
 
@@ -45,7 +47,7 @@ def include(feature, options, system):
 
 
 def supported_features_for_system(system):
-    features = ['brew', 'code', 'nvim']
+    features = ['brew', 'code', 'nvim', 'tmux']
     return [feature for feature in features if feature_supported(feature, system)]
 
 
@@ -232,6 +234,13 @@ def install(options, shell, install_shell_flag):
                 shell=True,
             )
 
+    if include('tmux', options, system):
+        info('tmux')
+        info("Backing up existing tmux config if present.")
+        mvsafe(home_dir / '.tmux.conf', home_dir / '.tmux.conf.save')
+        info("Installing tmux config.")
+        sh.copy(repo_dir / '.tmux.conf', home_dir / '.tmux.conf')
+
     info('Success!')
 
 
@@ -263,7 +272,7 @@ def main():
     install_parser = subparsers.add_parser(
         'install', help='install dotfiles with certain options')
     install_parser.add_argument(
-        'options', nargs='*', choices=['brew', 'code', 'nvim', 'all'], help='options for installation')
+        'options', nargs='*', choices=['brew', 'code', 'nvim', 'tmux', 'all'], help='options for installation')
     install_parser.add_argument(
         '--shell', choices=['zsh', 'fish'], required=True, help='choose shell for configuration')
     install_parser.add_argument(
